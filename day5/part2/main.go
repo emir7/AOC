@@ -22,10 +22,6 @@ func appendToBeginning(dst []string, src []string) []string {
 	return final
 }
 
-func part1() {
-
-}
-
 func main() {
 	currentStack := [][]string{
 		{"T", "Z", "B"},
