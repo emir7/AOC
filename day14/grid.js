@@ -60,7 +60,6 @@ module.exports = class Grid {
 
 
     extendGrid() {
-        console.log("extendGrid")
         for(let i = 0; i < this.grid.length; i++) {
             if(i == this.grid.length - 1) {
                 this.grid[i] = ["#", ...this.grid[i]];
