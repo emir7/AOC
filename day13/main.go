@@ -81,6 +81,19 @@ func parseLine(line []rune) *[]interface{} {
 	return stack.h.value
 }
 
+func TypeSwitch(param interface{}) string {
+	fmt.Println(reflect.TypeOf(param))
+	switch param.(type) {
+
+	case int:
+		return "Its an int"
+	case *[]interface{}:
+		return "Its a slice"
+	default:
+		return "unlucky"
+	}
+}
+
 func main() {
 	/*readFile, err := os.Open("input.txt")
 
@@ -102,10 +115,8 @@ func main() {
 		v, ok := secondPart.([]*interface{})
 		fmt.Println(v, ok)
 	*/
-	secondPart := (*parsedArr)[1]
-	fmt.Println(reflect.TypeOf(secondPart))
-	fmt.Println((*parsedArr)[1])
-	fmt.Println()
+	secondPart := (*parsedArr)[0]
+	fmt.Println(TypeSwitch(secondPart))
 	//readFile.Close()
 
 }
