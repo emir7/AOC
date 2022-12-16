@@ -50,9 +50,7 @@ let c = 0;
 while(true) {
     const sand = new Sand(grid, 500, 0);
     const canFall = sand.fall();
-
-   
-
+    
     if(!canFall) {
         break;
     }
