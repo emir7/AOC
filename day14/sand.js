@@ -1,26 +1,27 @@
 module.exports = class Sand {
-    constructor(grid, startX, startY) {
-        this.grid = grid.grid;
-        this.startXPos = startX - grid.startX + 1;
-        this.currentX = this.startXPos;
+    constructor(gridWrapper, startX, startY) {
+        this.gridWrapper = gridWrapper;
+        this.grid = this.gridWrapper.grid;
+        this.startX = startX;
+        
+        this.setPos();
         this.currentY = startY;
     }
 
-    fall() {
+    setPos() {
+        this.startXPos = this.startX - this.gridWrapper.startX;
         this.currentX = this.startXPos;
         this.currentY = 0;
+    }
+
+    fall() {
         let nextMove = this.getNextMove();
  
         if(nextMove == null) {
             return false;
         }
 
-
         while(nextMove) {
-            if(nextMove.e) {
-                return false;
-            }
-            
             this.currentX = nextMove.x;
             this.currentY = nextMove.y;
 
@@ -41,12 +42,7 @@ module.exports = class Sand {
             return {
                 x: this.currentX,
                 y: nextY,
-                e: false
             };
-        }
-
-        if(canMoveDown && this.grid[nextY][this.currentX] == "~") {
-            return {e: true};
         }
 
 
@@ -58,13 +54,15 @@ module.exports = class Sand {
             return {
                 x: leftX,
                 y: nextY,
-                e: false
             };
         }
 
-        if(canMoveDownLeft && this.grid[nextY][leftX] == "~") {
-            return {e: true};
+        if(leftX < 0) {
+            this.gridWrapper.extendGrid();
+            this.setPos();
+            return this.getNextMove();
         }
+
 
         // try right down
         const rightX = this.currentX + 1;
@@ -74,13 +72,16 @@ module.exports = class Sand {
             return {
                 x: rightX,
                 y: nextY,
-                e: false
             };
         }
 
-        if(canMoveDownRight && this.grid[nextY][rightX] == "~") {
-            return {e: true};
+        if(rightX == this.grid[0].length) {
+            this.gridWrapper.extendGrid();
+            this.setPos();
+
+            return this.getNextMove();
         }
+
     
         return null;
     }

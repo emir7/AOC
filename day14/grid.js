@@ -5,13 +5,12 @@ module.exports = class Grid {
         this.startY = startY;
         this.endY = endY;
         this.rocksCoordinates = rocksCoordinates;
-
         this.#initGrid();
     }
 
     #initGrid() {
-        const wid = this.endX - this.startX + 1 + 2;
-        const hei = this.endY - this.startY + 1;
+        const wid = this.endX - this.startX + 1;
+        const hei = this.endY - this.startY + 1
 
         this.grid = [];
 
@@ -36,14 +35,43 @@ module.exports = class Grid {
                 
                 for(let i = startY; i <= endY; i++) {
                     for(let j = startX; j <= endX; j++) {
-                        this.grid[i][j - this.startX + 1] = "#"
+                        this.grid[i][j - this.startX] = "#"
                     }
                 }
             }
         });
+        
+        for(let i = 0; i < 2; i++) {
+            this.floorRow = [];
+            for(let j = 0; j < wid; j++) {
+                this.floorRow.push(".");
+            }
 
-        this.grid[hei - 1][0] = "~";
-        this.grid[hei -1][wid - 1] = "~";
+            this.grid.push(this.floorRow)
+        }
+        
+        for(let i = 0; i < wid; i++) {
+            this.grid[this.grid.length - 1][i] = "#";
+        }
+
+
+        this.startFloorCoordinateY = (this.grid.length - 2);
+    }
+
+
+    extendGrid() {
+        console.log("extendGrid")
+        for(let i = 0; i < this.grid.length; i++) {
+            if(i == this.grid.length - 1) {
+                this.grid[i] = ["#", ...this.grid[i]];
+                this.grid[i].push("#");
+            } else {
+                this.grid[i] = [".", ...this.grid[i]];
+                this.grid[i].push(".");
+            }
+        }
+
+        this.startX--;
     }
 
     print() {

@@ -44,13 +44,23 @@ const initGridData = (parsedInput) => {
 const data = fs.readFileSync("input.txt", {encoding: "utf-8"});
 const parsedInput = parseInput(data);
 const grid = initGridData(parsedInput);
-const sand = new Sand(grid, 500, 0);
 
 let c = 0;
 
-while(sand.fall()) {
+while(true) {
+    const sand = new Sand(grid, 500, 0);
+    const canFall = sand.fall();
+
+   
+
+    if(!canFall) {
+        break;
+    }
+
     c++;
 }
 
-grid.print();
+
+grid.print()
 console.log(c);
+console.log(c + 1);
