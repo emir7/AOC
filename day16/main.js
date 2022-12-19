@@ -54,5 +54,5 @@ const getOptimalFlow2 = (valves, openedValves, numberOfMinutesLeft, currentFlow,
 
 };
 
-const optimalFlow = getOptimalFlow2(parsedInput, new Set([]), 30, 0, "AA");
+const optimalFlow = getOptimalFlow2(parsedInput, new Set([]), 30, 0, "AA", "");
 console.log(JSON.stringify(optimalFlow));
