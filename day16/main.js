@@ -3,58 +3,56 @@ const path = require("path");
 const inputParser = require("./input-parser");
 
 const parsedInput = inputParser.parse(path.join(__dirname, "input.txt"));
-const numberOfMinutesLeft = 30;
 
-const getOptimalFlow = (valves, visitedValves, numberOfMinutesLeft, currentValveLabel, openedValves) => {
-    if(numberOfMinutesLeft < 0) {
-        return {
-            top: false,
-            v: currentPressure
-        };
+const resultMap = {};
+
+const getOptimalFlow2 = (valves, openedValves, numberOfMinutesLeft, currentFlow, currentValveLabel, previousLabel) => {
+    if(resultMap[currentValveLabel] >= currentFlow) {
+        return 0;
+    }
+
+    if(numberOfMinutesLeft === 1) {
+        return currentFlow;
+    }
+
+    const currentValve = valves[currentValveLabel];
+    const possibleSolutions = [];
+
+    if(currentValve.rate !== 0 && !openedValves.has(currentValveLabel)) {
+        // odpres sebe
+        openedValves.add(currentValveLabel);
+        const option1 = getOptimalFlow2(valves, openedValves, numberOfMinutesLeft - 1, currentFlow + currentValve.rate * (numberOfMinutesLeft - 1), currentValveLabel, "");
+
+        resultMap[currentValveLabel] = Math.max(resultMap[currentValveLabel], option1);
+
+        possibleSolutions.push(
+            option1
+        );
+
+        openedValves.delete(currentValveLabel);
     }
 
 
-    let optimalFlow = 0;
-    const valve = valves[currentValveLabel];
+    for(let i = 0; i < currentValve.nextValves.length; i++) {
+        const nextValveLabel = currentValve.nextValves[i];
 
-    if(visitedValves.size == Object.keys(valves).length) {
-        return {
-            top: true,
-            v: valve.rate
-        };
-    }
-
-    visitedValves.add(currentValveLabel);
-    let currentMaxFlow = Number.NEGATIVE_INFINITY;
-    console.log(typeof valve.rate)
-    for(let i = 0; i < valve.nextValves.length; i++) {
-        const nextValve = valve.nextValves[i];
-
-        if(visitedValves.has(nextValve.label)) {
+        if(nextValveLabel === previousLabel) {
             continue;
         }
 
-        const currentFlow = getOptimalFlow(valves, visitedValves, numberOfMinutesLeft - 2, nextValve);
-        visitedValves.delete(nextValve.label);
+        // premik
+        const option2 = getOptimalFlow2(valves, openedValves, numberOfMinutesLeft - 1, currentFlow, nextValveLabel, currentValveLabel);
+        resultMap[nextValveLabel] = Math.max(resultMap[nextValveLabel], option2);
 
-        if(currentFlow.top) {
-            return {
-                v: currentFlow.v + valve.rate,
-                top: true
-            };
-        }
+        possibleSolutions.push(
+            option2
+        );
 
-        if(currentFlow.v > currentMaxFlow) {
-            currentMaxFlow = currentFlow.v;
-        }
     }
 
+    return Math.max(...possibleSolutions)
 
-    return {
-        top: false,
-        v: currentMaxFlow + valve.rate
-    };
 };
 
-const optimalFlow = getOptimalFlow(parsedInput, new Set([]), numberOfMinutesLeft, "AA", 0);
+const optimalFlow = getOptimalFlow2(parsedInput, new Set([]), 30, 0, "AA");
 console.log(JSON.stringify(optimalFlow));
