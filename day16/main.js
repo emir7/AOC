@@ -6,27 +6,25 @@ const parsedInput = inputParser.parse(path.join(__dirname, "input.txt"));
 
 let resultMap = {};
 
-const getOptimalFlow2 = (valves, openedValves, numberOfMinutesLeft, currentFlow, currentValveLabel, previousLabel) => {
+const getOptimalFlow2 = (valves, openedValves, numberOfMinutesLeft, currentFlow, currentValveLabel, previousLabel, eleWait) => {
     if(resultMap[currentValveLabel] >= currentFlow) {
         return 0;
     }
 
     if(numberOfMinutesLeft === 1) {
+        if(eleWait) {
+            return getOptimalFlow2(parsedInput, openedValves, 26, currentFlow, "AA", "", false);
+        }
+
         return currentFlow;
     }
 
     const currentValve = valves[currentValveLabel];
     const possibleSolutions = [];
 
-    // generate possible moves
-    // set max to 0
-    // iterate over possible moves and check if each recursive result is greater than max
-    // max = result
-    // return max
-
     if(currentValve.rate !== 0 && !openedValves.has(currentValveLabel)) {
-        // odpres sebe
-        const option1 = getOptimalFlow2(valves, new Set(openedValves).add(currentValveLabel), numberOfMinutesLeft - 1, currentFlow + currentValve.rate * (numberOfMinutesLeft - 1), currentValveLabel, currentValveLabel);
+        // open
+        const option1 = getOptimalFlow2(valves, new Set(openedValves).add(currentValveLabel), numberOfMinutesLeft - 1, currentFlow + currentValve.rate * (numberOfMinutesLeft - 1), currentValveLabel, currentValveLabel, eleWait);
 
         resultMap[currentValveLabel] = Math.max(resultMap[currentValveLabel], option1);
 
@@ -43,8 +41,8 @@ const getOptimalFlow2 = (valves, openedValves, numberOfMinutesLeft, currentFlow,
             continue;
         }
 
-        // premik
-        const option2 = getOptimalFlow2(valves, openedValves, numberOfMinutesLeft - 1, currentFlow, nextValveLabel, currentValveLabel);
+        // move
+        const option2 = getOptimalFlow2(valves, openedValves, numberOfMinutesLeft - 1, currentFlow, nextValveLabel, currentValveLabel, eleWait);
         resultMap[nextValveLabel] = Math.max(resultMap[nextValveLabel], option2);
 
         possibleSolutions.push(
@@ -61,34 +59,35 @@ const getNextPossibleStates = (parsedInput, currentState) => {
     const states = [];
     const nextNodes = parsedInput[currentState.position].nextValves;
 
-    if(resultMap[currentState.position] >= currentState.flow) {
-        return [];
-    }
-
     if(currentState.numberOfMinutes === 0) {
         return [];
     }
 
+
     // open
     if(parsedInput[currentState.position].rate && !currentState.openedValves.has(currentState.position)) {
         const calculatedFlow = currentState.flow + (parsedInput[currentState.position].rate) * (currentState.numberOfMinutes - 1);
+        if(currentState.memo[(currentState.numberOfMinutes + currentState.position)] >= calculatedFlow) {
 
-        //resultMap[currentState.position] = Math.max(resultMap[currentState.position] ?? 0, calculatedFlow);
+        } else {
+            states.push({
+                position: currentState.position,
+                numberOfMinutes: currentState.numberOfMinutes - 1,
+                flow: calculatedFlow,
+                prevState: currentState.position,
+                openedValves: new Set(currentState.openedValves).add(currentState.position),
+                memo: currentState.memo
+            });
+            currentState.memo[(currentState.numberOfMinutes + currentState.position)] = calculatedFlow;
+        }
 
-        states.push({
-            position: currentState.position,
-            numberOfMinutes: currentState.numberOfMinutes - 1,
-            flow: calculatedFlow,
-            prevState: currentState.position,
-            openedValves: new Set(currentState.openedValves).add(currentState.position)
-        });
     }
 
 
     // move
     for(const nextNode of nextNodes) {
-        if(currentState.prevState === nextNode) {
-            continue
+        if(currentState.memo[(nextNode + currentState.position)] >= currentState.flow || currentState.prevState === nextNode) {
+            continue;
         }
 
         states.push({
@@ -96,7 +95,8 @@ const getNextPossibleStates = (parsedInput, currentState) => {
             numberOfMinutes: currentState.numberOfMinutes - 1,
             flow: currentState.flow,
             prevState: currentState.position,
-            openedValves: new Set(currentState.openedValves)
+            openedValves: new Set(currentState.openedValves),
+            memo: currentState.memo
         })
     }
 
@@ -111,20 +111,21 @@ const part1 = (parsedInput, numberOfMinutes, start) => {
         numberOfMinutes,
         flow: 0,
         prevState: "",
-        openedValves: new Set([])
+        openedValves: new Set([]),
+        memo: {}
     }];
 
     let max = 0;
 
     while(queue.length) {
-        const head = queue.pop();
+        const head = queue.shift();
 
         if(!head) {
             return max;
         }
 
         const nextStates = getNextPossibleStates(parsedInput, head);
-        resultMap[head.position] = Math.max(resultMap[head.position], head.flow)
+
         queue.push(...nextStates)
 
         if(head.flow > max) {
@@ -136,90 +137,31 @@ const part1 = (parsedInput, numberOfMinutes, start) => {
     return max;
 };
 
-
-const part2 = (hm, openedValves, t, turn, flow, e, h, ep, hp) => {
+const memo = {};
+const part2 = (hm, t, openedValves, pos, flow) => {
     if(t === 0) {
-        return flow;
+        return 0;
     }
 
-    const solutions = [];
-
-    let nextTurn = "";
-
-    if(turn === "e") {
-        nextTurn = "h";
-    } else if(turn === "h") {
-        nextTurn = "e"
+    if(memo[(pos)] > flow) {
+        return 0;
     }
 
-    if(e === h) {
-        // same position
-        if(hm[e].rate > 0 && !openedValves.has(e)) {
-            // not opened valve, and has rate greater than 0
-            if(turn === "e") {
-                const o1 = part2(hm, new Set(openedValves).add(e), t - 1 ,"h", flow + (t - 1) * hm[e].rate, e, h, ep, hp);
-                solutions.push(o1);
-            } else {
-                const o2 = part2(hm, new Set(openedValves).add(e), t,"e", flow + (t - 1) * hm[e].rate, e, h, ep, hp);
-                solutions.push(o2);
-            }
-        }
-    } else {
-        if(hm[e].rate > 0 && !openedValves.has(e) && turn === "e") {
-            const o = part2(hm, new Set(openedValves).add(e), t - 1, nextTurn, flow + (t - 1) * hm[e].rate, e, h, ep, hp);
-            solutions.push(o);
-        }
+    memo[(pos)] = flow;
 
-        if(hm[h].rate > 0 && !openedValves.has(h) && turn === "h") {
-            const o = part2(hm, new Set(openedValves).add(h), t, nextTurn, flow + (t - 1) * hm[h].rate, e, h, ep, hp);
-            solutions.push(o);
-        }
+    let max = 0;
+
+    for(const nextPos of hm[pos].nextValves) {
+        max = Math.max(max, part2(hm, t - 1, new Set(openedValves), nextPos, flow));
     }
 
-    let comparisonKey = (turn === "e") ? ep : hp;
-    let currentValveKey = (turn === "e") ? e : h;
-
-    // move
-    for(const valveLabel of hm[currentValveKey].nextValves) {
-        if(valveLabel === comparisonKey) {
-            continue;
-        }
-
-        // (hm, openedValves, t, turn, flow, e, h, ep, hp)
-        if(turn === "e") {
-            const o1 = part2(hm, openedValves, t - 1, nextTurn, flow, valveLabel, h, e, hp);
-            solutions.push(o1);
-        } else {
-            const o2 = part2(hm, openedValves, t, nextTurn, flow, e, valveLabel, ep, h);
-            solutions.push(o2);
-        }
-
+    if(hm[pos].rate > 0 && !openedValves.has(pos)) {
+        max = Math.max(max, part2(hm, t - 1, new Set(openedValves).add(pos), pos, (t - 1) * hm[pos].rate ));
     }
 
-    return Math.max(...solutions);
+    return max;
+};
 
-}
 
-
-//console.time("getOptimalFlow2");
-//const optimalFlow = getOptimalFlow2(parsedInput, new Set([]), 30, 0, "AA", "");
-//console.timeEnd("getOptimalFlow2");
-//resultMap = {};
-/*console.time("part1")
-const p1 = part1(parsedInput, 30, "AA");
-console.log(p1)
-console.timeEnd("part1");*/
-
-const p2 = part2(
-    parsedInput,
-    new Set([]),
-    26,
-    "h",
-    0,
-    "AA",
-    "AA",
-    "",
-    ""
-);
-
-console.log(p2)
+const optimalFlow = getOptimalFlow2(parsedInput, new Set([]), 26, 0, "AA", "", true);
+console.log(optimalFlow)
